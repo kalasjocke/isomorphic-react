@@ -8,9 +8,9 @@ module.exports = class Api
   base: "http://gentle-temple-1190.herokuapp.com"
 
   constructor: ->
-    @cache = @_buildCache() if isClient()
+    @bootstrap = @_buildBootstrap() if isClient()
 
-  _buildCache: ->
+  _buildBootstrap: ->
     rv = {}
 
     for request in window.BOOTSTRAP
@@ -20,10 +20,10 @@ module.exports = class Api
 
   get: (endpoint) ->
     new RSVP.Promise((resolve, reject) =>
-      if isClient() and @cache[endpoint]?
-        response = @cache[endpoint]
+      if isClient() and @bootstrap[endpoint]?
+        response = @bootstrap[endpoint]
 
-        delete @cache[endpoint]
+        delete @bootstrap[endpoint]
 
         resolve(endpoint: endpoint, response: response)
       else
