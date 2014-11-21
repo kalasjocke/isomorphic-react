@@ -1,38 +1,35 @@
 RSVP = require 'rsvp'
 Request = require 'superagent'
 
-{isClient} = require './utils'
-
 
 module.exports = class Api
-  base: "http://gentle-temple-1190.herokuapp.com"
+  base: "https://api.tictail.com/v1"
 
-  constructor: ->
-    @bootstrap = @_buildBootstrap() if isClient()
+  constructor: (@store, @record, bootstrap) ->
+    @bootstrap = if bootstrap?
+      JSON.parse(new Buffer(bootstrap, 'base64').toString('utf8'))
+    else
+      {}
 
-  _buildBootstrap: ->
-    rv = {}
+  recorded: ->
+    new Buffer(JSON.stringify(@bootstrap)).toString('base64')
 
-    for request in window.BOOTSTRAP
-      rv[request.endpoint] = request.response
-
-    return rv
-
-  get: (endpoint) ->
+  get: (endpoint, key) ->
     new RSVP.Promise((resolve, reject) =>
-      if isClient() and @bootstrap[endpoint]?
+      # TODO Make the promise resolve nicer
+      if @bootstrap[endpoint]?
         response = @bootstrap[endpoint]
-
         delete @bootstrap[endpoint]
-
-        resolve(endpoint: endpoint, response: response)
+        @store.set(key, response)
+        resolve()
       else
         Request.get("#{@base}/#{endpoint}", (err, res) =>
-          response = JSON.parse(res.text)
-
           if err
             reject(err)
           else
-            resolve(endpoint: endpoint, response: response)
+            response = JSON.parse(res.text)
+            @store.set(key, response)
+            @bootstrap[endpoint] = response if @record
+            resolve()
         )
     )

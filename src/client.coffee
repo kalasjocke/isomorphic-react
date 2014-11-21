@@ -1,6 +1,10 @@
 React = require 'react'
 
-routes = require './routes'
-router = require './router'
+Api = require './api'
+Store = require './store'
+routesFactory = require './components/routes'
 
-router.configure(routes)
+store = new Store()
+api = new Api(store, false, window.BOOTSTRAP)
+
+React.renderComponent(routesFactory(api, store), document.querySelector('#app'))

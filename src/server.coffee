@@ -1,21 +1,29 @@
+fs = require 'fs'
+
 React = require 'react'
+Router = require 'react-router'
+Handlebars = require 'handlebars'
 express = require 'express'
 morgan = require 'morgan'
 
-routes = require './routes'
-router = require './router'
+Api = require './api'
+Store = require './store'
+routesFactory = require './components/routes'
 
 
-PORT = process.env.PORT or 3000
-
-router.configure(routes)
-routing = (req, res, next) ->
-  router.dispatch req, res, (err) -> next()
+layout = Handlebars.compile(fs.readFileSync(__dirname + '/index.handlebars', encoding: 'utf8'))
 
 app = express()
-app.use(routing)
 app.use(morgan('dev'))
 app.use('/assets', express.static(__dirname + '/../dist'))
-app.listen PORT
-
-console.log "Serving at http://localhost:#{PORT}"
+app.get('*', (req, res) ->
+  store = new Store()
+  api = new Api(store, true)
+  Router.renderRoutesToString(routesFactory(api, store), req.originalUrl, (err, reason, html) ->
+    if not err
+      res.send(layout content: new Handlebars.SafeString(html), bootstrap: api.recorded())
+    else
+      res.status(500).send(err.stack)
+  )
+)
+app.listen 5050
